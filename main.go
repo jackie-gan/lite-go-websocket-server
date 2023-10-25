@@ -2,15 +2,17 @@ package main
 
 import (
 	"fmt"
-	"net/http"
 
+	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 )
 
+const serverPort = "9099"
+
 var wsUpgrader = websocket.Upgrader{}
 
-func wsHandler(w http.ResponseWriter, req *http.Request) {
-	conn, err := wsUpgrader.Upgrade(w, req, nil)
+func wsHandler(ctx *gin.Context) {
+	conn, err := wsUpgrader.Upgrade(ctx.Writer, ctx.Request, nil)
 	if err != nil {
 		panic(err)
 	}
@@ -21,7 +23,7 @@ func wsHandler(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 
-		fmt.Printf("%s sent: %s\n", conn.RemoteAddr(), string(msg))
+		fmt.Printf("receive: %s\n", string(msg))
 
 		if err = conn.WriteMessage(msgType, msg); err != nil {
 			return
@@ -29,8 +31,16 @@ func wsHandler(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
+func logHandler(ctx *gin.Context) {
+	fmt.Printf("request from %s, url: %s\n", ctx.Request.RemoteAddr, ctx.Request.URL)
+	ctx.Next()
+}
+
 func main() {
-	http.HandleFunc("/", wsHandler)
+	server := gin.Default()
+
+	server.Use(logHandler, wsHandler)
+
 	fmt.Println("socket server started on port 9099...")
-	http.ListenAndServe(":9099", nil)
+	server.Run(":" + serverPort)
 }
