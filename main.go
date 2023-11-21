@@ -39,7 +39,10 @@ func logHandler(ctx *gin.Context) {
 func main() {
 	server := gin.Default()
 
-	server.Use(logHandler, wsHandler)
+	server.Use(
+		logHandler,
+		wsHandler,
+	)
 
 	fmt.Println("socket server started on port 9099...")
 	server.Run(":" + serverPort)
